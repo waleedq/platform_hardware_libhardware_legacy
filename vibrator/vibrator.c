@@ -29,25 +29,39 @@
 
 static int sendit(int timeout_ms)
 {
-    int nwr, ret,fd;
+    int nwr, ret,test;
     char value[100];
-
-    if (fd > 0)
+    char buf[1000];
+    int fd;
+  
+    if (fd > 0){
      usleep(100000);
+    }
     
     fd = open(THE_DEVICE, O_RDWR | O_NOCTTY);
-    if(fd < 0)
+    if(fd < 0){
+	LOGE("couldn't open vdevice , error code: %d\n",errno);
         return errno;
-    
+    }
     if(timeout_ms > 0){
-      nwr = sprintf(value, "at+xdrv=4,0,1,12,%d,%d\r\n",timeout_ms+1,timeout_ms);
+      if(timeout_ms != 9999999){
+	nwr = sprintf(value, "at+xdrv=4,0,1,12,%d,%d\r\n",timeout_ms+1,timeout_ms);
+      }else{
+	nwr = sprintf(value, "at+xdrv=4,0,2,12,1000,999\r\n");
+      }
     }else{
       nwr = sprintf(value, "at+xdrv=4,0,0,0,0,0\r\n");
     }
     ret = write(fd, value, nwr);
     close(fd);
     
-    return (ret == nwr) ? 0 : -1;
+    if (ret == nwr){
+      LOGE("vibrated :) , ret: %d , nwr: %d, timeout_ms:%d , value:%s\n",ret,nwr,timeout_ms,value);
+      return 0;
+    }else{
+      LOGE("couldn't vibrate :( , ret: %d , nwr: %d , timeout_ms:%d ,value:%s\n",ret,nwr,timeout_ms,value);
+      return -1;
+    }
 }
 
 int vibrator_on(int timeout_ms)
